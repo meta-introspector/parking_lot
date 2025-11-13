@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## `parking_lot` - [0.12.6](https://github.com/Amanieu/parking_lot/compare/parking_lot-v0.12.5...parking_lot-v0.12.6) - 2025-11-13
+
+### Other
+- condvar test: remove outdated comment
+
 ## `parking_lot` - [0.12.5](https://github.com/Amanieu/parking_lot/compare/parking_lot-v0.12.4...parking_lot-v0.12.5) - 2025-09-30
 
 - Bumped MSRV to 1.71

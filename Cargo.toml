@@ -9,7 +9,7 @@ readme = "README.md"
 keywords = ["mutex", "condvar", "rwlock", "once", "thread"]
 categories = ["concurrency"]
 edition = "2021"
-rust-version = "1.71"
+# rust-version = "1.71"
 
 [package.metadata.docs.rs]
 features = ["arc_lock", "serde", "deadlock_detection"]
@@ -38,5 +38,5 @@ serde = ["lock_api/serde"]
 send_guard = []
 hardware-lock-elision = []
 
-[workspace]
-exclude = ["benchmark"]
+#[workspace]
+#exclude = ["benchmark"]

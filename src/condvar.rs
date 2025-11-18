@@ -351,6 +351,7 @@ impl Condvar {
 
         // ... and re-lock it once we are done sleeping
         if result == ParkResult::Unparked(TOKEN_HANDOFF) {
+            #[cfg(feature = "deadlock_detection")]
             unsafe { deadlock::acquire_resource(mutex as *const _ as usize) };
         } else {
             mutex.lock();

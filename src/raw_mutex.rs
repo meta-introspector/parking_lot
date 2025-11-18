@@ -71,6 +71,7 @@ unsafe impl lock_api::RawMutex for RawMutex {
         {
             self.lock_slow(None);
         }
+        #[cfg(feature = "deadlock_detection")]
         unsafe { deadlock::acquire_resource(self as *const _ as usize) };
     }
 
@@ -88,6 +89,7 @@ unsafe impl lock_api::RawMutex for RawMutex {
                 Ordering::Relaxed,
             ) {
                 Ok(_) => {
+                    #[cfg(feature = "deadlock_detection")]
                     unsafe { deadlock::acquire_resource(self as *const _ as usize) };
                     return true;
                 }
@@ -98,6 +100,7 @@ unsafe impl lock_api::RawMutex for RawMutex {
 
     #[inline]
     unsafe fn unlock(&self) {
+        #[cfg(feature = "deadlock_detection")]
         deadlock::release_resource(self as *const _ as usize);
         if self
             .state

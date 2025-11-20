@@ -5,7 +5,11 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use crate::{deadlock, util};
+#[cfg(feature = "deadlock_detection")]
+use crate::deadlock::{acquire_resource, release_resource};
+#[cfg(not(feature = "deadlock_detection"))]
+use crate::deadlock;
+use crate::util;
 use core::{
     sync::atomic::{AtomicU8, Ordering},
     time::Duration,
@@ -122,6 +126,7 @@ unsafe impl lock_api::RawMutex for RawMutex {
 unsafe impl lock_api::RawMutexFair for RawMutex {
     #[inline]
     unsafe fn unlock_fair(&self) {
+        #[cfg(feature = "deadlock_detection")]
         deadlock::release_resource(self as *const _ as usize);
         if self
             .state
@@ -157,6 +162,7 @@ unsafe impl lock_api::RawMutexTimed for RawMutex {
             self.lock_slow(Some(timeout))
         };
         if result {
+            #[cfg(feature = "deadlock_detection")]
             unsafe { deadlock::acquire_resource(self as *const _ as usize) };
         }
         result
@@ -174,6 +180,7 @@ unsafe impl lock_api::RawMutexTimed for RawMutex {
             self.lock_slow(util::to_deadline(timeout))
         };
         if result {
+            #[cfg(feature = "deadlock_detection")]
             unsafe { deadlock::acquire_resource(self as *const _ as usize) };
         }
         result
@@ -327,6 +334,7 @@ impl RawMutex {
 
     #[cold]
     fn bump_slow(&self) {
+        #[cfg(feature = "deadlock_detection")]
         unsafe { deadlock::release_resource(self as *const _ as usize) };
         self.unlock_slow(true);
         self.lock();

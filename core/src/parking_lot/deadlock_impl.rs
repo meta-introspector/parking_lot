@@ -8,12 +8,13 @@ use petgraph::graphmap::DiGraphMap;
 
 #[cfg(feature = "deadlock_detection")]
 pub mod deadlock_impl {
-    use crate::parking_lot::{get_hashtable, lock_bucket, with_thread_data, ThreadData, NUM_THREADS};
+use crate::parking_lot::{get_hashtable, lock_bucket, with_thread_data, ThreadData};
+    use crate::parking_lot::thread_data::NUM_THREADS;
     use crate::thread_parker::{ThreadParkerT, UnparkHandleT};
     use crate::word_lock::WordLock;
-    use backtrace::Backtrace;
-    use petgraph;
-    use petgraph::graphmap::DiGraphMap;
+    use ::backtrace::Backtrace;
+    use ::petgraph;
+    use ::petgraph::graphmap::DiGraphMap;
     use std::cell::{Cell, UnsafeCell};
     use std::collections::HashSet;
     use std::sync::atomic::Ordering;
@@ -41,11 +42,11 @@ pub mod deadlock_impl {
 
 
     pub(super) unsafe fn on_unpark(td: &ThreadData) {
-        if (*td.payload.inner.get()).deadlocked.get() {
-            let sender = (*(*td.payload.inner.get()).backtrace_sender.get()).take().unwrap();
+        if td.deadlock_data.deadlocked.get() {
+            let sender = td.deadlock_data.backtrace_sender.get().take().unwrap();
             sender
                 .send(DeadlockedThread {
-                    thread_id: (*td.payload.inner.get()).thread_id,
+                    thread_id: td.deadlock_data.thread_id,
                     backtrace: Backtrace::new(),
                 })
                 .unwrap();
@@ -61,13 +62,13 @@ pub mod deadlock_impl {
 
     pub unsafe fn acquire_resource(key: usize) {
         with_thread_data(|thread_data| {
-            (*(*thread_data.payload.inner.get()).resources.get()).push(key);
+            thread_data.deadlock_data.resources.get().push(key);
         });
     }
 
     pub unsafe fn release_resource(key: usize) {
         with_thread_data(|thread_data| {
-            let resources = &mut (*(*thread_data.payload.inner.get()).resources.get());
+            let resources = &mut *thread_data.deadlock_data.resources.get();
 
             // There is only one situation where we can fail to find the
             // resource: we are currently running TLS destructors and our
@@ -104,10 +105,10 @@ pub mod deadlock_impl {
             let mut current = b.queue_head.get();
             while !current.is_null() {
                 if !(*current).parked_with_timeout.get()
-                    && !(*(*current).payload.inner.get()).deadlocked.get()
+                    && !(*current).deadlock_data.deadlocked.get()
                 {
                     // .resources are waiting for their owner
-                    for &resource in &(*(*(*current).payload.inner.get()).resources.get()) {
+                    for &resource in &(*current).deadlock_data.resources.get() {
                         graph.add_edge(Resource(resource), Thread(current), ());
                     }
                     // owner waits for resource .key
@@ -168,10 +169,10 @@ pub mod deadlock_impl {
             let mut current = b.queue_head.get();
             while !current.is_null() {
                 if !(*current).parked_with_timeout.get()
-                    && !(*(*current).payload.inner.get()).deadlocked.get()
+                    && !(*current).deadlock_data.deadlocked.get()
                 {
                     // .resources are waiting for their owner
-                    for &resource in &(*(*(*current).payload.inner.get()).resources.get()) {
+                    for &resource in &(*current).deadlock_data.resources.get() {
                         graph.add_edge(Resource(resource), Thread(current), ());
                     }
                     // owner waits for resource .key
@@ -199,8 +200,8 @@ pub mod deadlock_impl {
             let (sender, receiver) = mpsc::channel();
             for td in cycle {
                 let bucket = lock_bucket((*td).key.load(Ordering::Relaxed));
-                (*(*td).payload.inner.get()).deadlocked.set(true);
-                *(*(*td).payload.inner.get()).backtrace_sender.get() = Some(sender.clone());
+                td.deadlock_data.deadlocked.set(true);
+                *td.deadlock_data.backtrace_sender.get() = Some(sender.clone());
                 let handle = (*td).parker.unpark_lock();
                 // SAFETY: We hold the lock here, as required
                 bucket.mutex.unlock();

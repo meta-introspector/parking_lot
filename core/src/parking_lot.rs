@@ -818,7 +818,7 @@ pub unsafe fn unpark_all(key: usize, unpark_token: UnparkToken) -> usize {
     let mut link = &bucket.queue_head;
     let mut current = bucket.queue_head.get();
     let mut previous = ptr::null();
-    let mut threads = SmallVec::<[_; 8]>::new();
+    let mut threads = SmallVec::<<ThreadParker as ThreadParkerT>::UnparkHandle, 8>::new();
     while !current.is_null() {
         if (*current).key.load(Ordering::Relaxed) == key {
             // Remove the thread from the queue
@@ -1029,7 +1029,7 @@ pub unsafe fn unpark_filter(
     let mut link = &bucket.queue_head;
     let mut current = bucket.queue_head.get();
     let mut previous = ptr::null();
-    let mut threads = SmallVec::<[_; 8]>::new();
+    let mut threads = SmallVec::<(*const ThreadData, Option<<ThreadParker as ThreadParkerT>::UnparkHandle>), 8>::new();
     let mut result = UnparkResult::default();
     while !current.is_null() {
         if (*current).key.load(Ordering::Relaxed) == key {

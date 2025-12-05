@@ -1146,13 +1146,13 @@ impl RawRwLock {
 
     #[inline]
     fn deadlock_acquire(&self) {
-        unsafe { deadlock::deadlock::acquire_resource(self as *const _ as usize) };
-        unsafe { deadlock::deadlock::acquire_resource(self as *const _ as usize + 1) };
+        unsafe { deadlock::acquire_resource(self as *const _ as usize) };
+        unsafe { deadlock::acquire_resource(self as *const _ as usize + 1) };
     }
 
     #[inline]
     fn deadlock_release(&self) {
-        unsafe { deadlock::deadlock::release_resource(self as *const _ as usize) };
-        unsafe { deadlock::deadlock::release_resource(self as *const _ as usize + 1) };
+        unsafe { deadlock::release_resource(self as *const _ as usize) };
+        unsafe { deadlock::release_resource(self as *const _ as usize + 1) };
     }
 }

@@ -12,7 +12,7 @@ use core::{
     mem, ptr,
     sync::atomic::{fence, AtomicUsize, Ordering},
 };
-use crate::parking_lot::lock_bucket;
+
 struct ThreadData {
     parker: ThreadParker,
 

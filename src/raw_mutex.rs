@@ -7,8 +7,6 @@
 
 #[cfg(feature = "deadlock_detection")]
 use crate::deadlock::{acquire_resource, release_resource};
-#[cfg(not(feature = "deadlock_detection"))]
-use crate::deadlock;
 use crate::util;
 use core::{
     sync::atomic::{AtomicU8, Ordering},

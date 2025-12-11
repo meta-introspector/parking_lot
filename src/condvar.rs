@@ -7,7 +7,7 @@
 
 use crate::mutex::MutexGuard;
 use crate::raw_mutex::{RawMutex, TOKEN_HANDOFF, TOKEN_NORMAL};
-use crate::{deadlock, util};
+use crate::util;
 use core::{
     fmt, ptr,
     sync::atomic::{AtomicPtr, Ordering},
